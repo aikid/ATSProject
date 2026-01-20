@@ -1,0 +1,57 @@
+﻿# Build artifacts
+bin/
+obj/
+
+# Visual Studio files
+.vs/
+*.user
+*.suo
+
+# Rider files
+.idea/
+
+# ASP.NET runtime files
+*.db
+*.log
+*.pdb
+*.pdb.lock
+
+# Configuration files
+appsettings.*.json
+
+# OS generated files
+[Tt]humbs.db
+[Dd]esktop.ini
+*.DS_Store
+
+# Node.js dependencies
+node_modules/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Resharper
+_ReSharper*/
+
+# Backup & report files
+*.bak
+*.swp
+*.tmp
+*.temp
+*.log
+*.log.*
+
+# JetBrains Rider
+.idea/
+
+# Local history
+.localhistory/
+
+# Logs
+logs
+*.log
+
+# Azure
+.scm/
