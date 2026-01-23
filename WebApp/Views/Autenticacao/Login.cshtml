@@ -1,0 +1,29 @@
+﻿<form method="post" id="frmLogin" onsubmit="logar(event, 'txtCredencialLogin', 'txtSenhaLogin')">
+    <h1 class="h2 mb-4 fw-normal text-center">Especialistas</h1>
+
+    <!-- E-mail -->
+    <div class="form-floating">
+        <input type="text" class="form-control campos-unificados_sup" id="txtCredencialLogin" required onfocusout="validarCredenciaisAcesso('txtCredencialLogin', 'feedbackInvalido');">
+        <label for="">E-mail ou CPF</label>
+    </div>
+
+    <!-- Senha -->
+    <div class="form-floating">
+        <input type="password" class="form-control campos-unificados_inf" id="txtSenhaLogin" required>
+        <label for="">Senha</label>
+        <i onclick="visualizarSenha('txtSenhaLogin');" class="fa-solid fa-eye-slash olho-senha"></i>
+    </div>
+
+    <div id="feedbackInvalido" class="invalid-feedback">
+    </div>
+
+    <!-- Botões -->
+    <div class="botoesAutenticacao">
+        <a href="@Url.Action("PreCadastro", "Especialista")" class="btnPadrao">Criar sua conta de especialista</a>
+        <button class="btnPadrao btnEntrar" type="submit">Entrar</button>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="@Url.Action("RecuperacaoSenha", "Autenticacao")" class="link-danger"><strong>Esqueci minha Senha</strong></a>
+    </div>
+</form>

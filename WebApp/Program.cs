@@ -1,26 +1,34 @@
+using WebApp.WebAppUtilities;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllersWithViews();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<IApiClient, ApiClient>(client =>
+{
+    var baseUrl = builder.Configuration["WebAppUtil:apiATSPath"];
+    if (string.IsNullOrWhiteSpace(baseUrl))
+        throw new InvalidOperationException("Config 'WebAppUtil:apiATSPath' não encontrada.");
 
-// Add services to the container.
-builder.Services.AddRazorPages();
+    client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
+});
 
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+builder.Services.AddDistributedMemoryCache();
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
+app.UseSession();
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseRouting();
-
 app.UseAuthorization();
-
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
-
+app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}");
 app.Run();

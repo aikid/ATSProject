@@ -1,0 +1,56 @@
+﻿.bodyAutenticacao {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center;
+    justify-content: center;
+    background-image: url(../../img/admBG.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto;
+}
+
+/* -----------------------------------------------------
+    Formulário usado para as telas de autenticação
+----------------------------------------------------- */
+.formAutenticacao {
+    width: 100%;
+    max-width: 450px;
+    padding: 15px;
+    margin: auto;
+}
+
+    .formAutenticacao .checkbox {
+        font-weight: 400;
+    }
+
+    .formAutenticacao .form-floating:focus-within {
+        z-index: 2;
+    }
+
+.botoesAutenticacao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.btnEntrar {
+    margin-left: .5rem;
+    width: 150px !important;
+}
+
+@keyframes slideUpFadeOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    100% {
+        opacity: 0.85;
+        transform: translateY(-30px);
+    }
+}
+
+.form-animar-saida {
+    animation: slideUpFadeOut 0.5s ease forwards;
+}
