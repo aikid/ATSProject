@@ -21,10 +21,16 @@ namespace WebApp.Controllers
             if (!AutenticacaoUtil.Autenticado(_httpContextAccessor))
                 return RedirectToAction("Login", "Autenticacao");
 
-            if (!AutenticacaoUtil.Autorizado(_httpContextAccessor, "esp_especialista"))
-                return RedirectToAction("Dashboard");
+            else return RedirectToAction("Dashboard");
+        }
 
-            else return RedirectToAction("DashboardEspecialista");
+        [HttpGet]
+        public IActionResult Dashboard()
+        {
+            if (!AutenticacaoUtil.Autenticado(_httpContextAccessor))
+                return RedirectToAction("Login", "Autenticacao");
+
+            return View("Dashboard");
         }
     }
 }

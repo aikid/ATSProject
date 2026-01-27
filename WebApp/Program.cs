@@ -1,3 +1,4 @@
+using WebApp.Middlewares;
 using WebApp.WebAppUtilities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,16 +12,16 @@ builder.Services.AddHttpClient<IApiClient, ApiClient>(client =>
 
     client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
 });
+builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-builder.Services.AddDistributedMemoryCache();
+
 var app = builder.Build();
-app.UseSession();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -29,6 +30,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseAuthorization();
+app.UseSession();
+Console.WriteLine(">>> Registrando AuthMiddleware");
+app.UseMiddleware<AuthMiddleware>();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}");
 app.Run();

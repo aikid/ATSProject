@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using WebApp.Models.DTOs;
 
 namespace WebApp.Controllers
 {
@@ -25,6 +26,30 @@ namespace WebApp.Controllers
             return View("Login");
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Login(string USUARIO, string SENHA)
+        {
+            var client = new HttpClient();
+            client.BaseAddress = new Uri(_apiATSPath);
+
+            var response = await client.PostAsJsonAsync("/api/autenticacao/login", new
+            {
+                USUARIO,
+                SENHA
+            });
+
+            if (!response.IsSuccessStatusCode)
+                return Json(new { req = false, msg = "Usuário ou senha inválidos." });
+
+            var result = await response.Content.ReadFromJsonAsync<LoginResponseDTO>();
+
+            // 🔐 Salvar JWT (Session por enquanto)
+            _httpContextAccessor.HttpContext.Session.SetString("JWT", result.accessToken);
+
+            return Json(new { req = true, cond = false });
+        }
+
+
         [HttpGet]
         public IActionResult AcessoNegado()
         {
@@ -35,7 +60,8 @@ namespace WebApp.Controllers
         public IActionResult Logout()
         {
             _httpContextAccessor.HttpContext.Session.Clear();
-            return RedirectToAction("Login");
+            Response.Cookies.Delete(".AspNetCore.Session");
+            return RedirectToAction("Login", "Autenticacao");
         }
     }
 }
