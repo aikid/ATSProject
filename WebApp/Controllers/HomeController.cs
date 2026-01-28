@@ -24,11 +24,10 @@ namespace WebApp.Controllers
             else return RedirectToAction("Dashboard");
         }
 
-        [HttpGet]
         public IActionResult Dashboard()
         {
-            if (!AutenticacaoUtil.Autenticado(_httpContextAccessor))
-                return RedirectToAction("Login", "Autenticacao");
+            //if (!AutenticacaoUtil.Autenticado(_httpContextAccessor))
+            //    return RedirectToAction("Login", "Autenticacao");
 
             return View("Dashboard");
         }

@@ -31,7 +31,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
-Console.WriteLine(">>> Registrando AuthMiddleware");
 app.UseMiddleware<AuthMiddleware>();
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}");
 app.Run();
