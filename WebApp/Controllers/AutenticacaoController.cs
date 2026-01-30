@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApp.Models.DTOs;
+using Domain.DTOs;
 
 namespace WebApp.Controllers
 {
@@ -43,10 +43,14 @@ namespace WebApp.Controllers
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponseDTO>();
 
-            // 🔐 Salvar JWT (Session por enquanto)
-            _httpContextAccessor.HttpContext.Session.SetString("JWT", result.accessToken);
+            _httpContextAccessor.HttpContext.Session.SetString("JWT", result.AccessToken);
+            _httpContextAccessor.HttpContext.Session.SetString("REFRESH_TOKEN", result.RefreshToken);
 
-            return Json(new { req = true, cond = false });
+            return Json(new {
+                success = true,
+                accessToken = result.AccessToken,
+                refreshToken = result.RefreshToken
+            });
         }
 
 

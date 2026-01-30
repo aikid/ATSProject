@@ -1,42 +1,83 @@
-﻿using Api.Helpers;
+﻿using Api.Data;
+using Api.Helpers;
 using Domain.DTOs;
-using Microsoft.AspNetCore.Identity.Data;
+using Domain.Model;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 
 namespace Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AutenticacaoController: Controller
+    public class AutenticacaoController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-        public AutenticacaoController(IConfiguration configuration)
+        private readonly AtsDbContext _db;
+
+        public AutenticacaoController(IConfiguration configuration, AtsDbContext db)
         {
             _configuration = configuration;
+            _db = db;
         }
-
 
         [HttpPost("login")]
-        public IActionResult Login(LoginRequestDTO request)
+        public IActionResult Login(LoginRequestDTO dto)
         {
-            // 1. Validar usuário (email/cpf + senha)
-            // (mock por enquanto)
-            if (request.USUARIO != "admin@admim.com" || request.SENHA != "123")
-                return Unauthorized();
+            var user = _db.Users.FirstOrDefault(u => u.Email == dto.USUARIO);
 
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.SENHA, user.PasswordHash))
+                return Unauthorized("Usuário ou senha inválidos");
 
-            var token = JwtHelper.GenerateToken(
-                userId: 1,
-                email: request.USUARIO,
-                configuration: _configuration
-            );
+            var jwt = JwtHelper.GenerateToken(user, _configuration);
+            var refreshToken = JwtHelper.GenerateRefreshToken();
 
-            return Ok(new
+            _db.RefreshTokens.Add(new RefreshToken
             {
-                accessToken = token,
-                expiresIn = 3600
+                Token = refreshToken,
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                IsRevoked = false
+            });
+
+            _db.SaveChanges();
+
+            return Ok(new LoginResponseDTO
+            {
+                AccessToken = jwt,
+                RefreshToken = refreshToken
             });
         }
+
+        [HttpPost("refresh")]
+        public IActionResult Refresh([FromBody] string refreshToken)
+        {
+            var token = _db.RefreshTokens
+                .FirstOrDefault(rt => rt.Token == refreshToken && !rt.IsRevoked);
+
+            if (token == null || token.ExpiresAt < DateTime.UtcNow)
+                return Unauthorized("Refresh token inválido");
+
+            var user = _db.Users.Find(token.UserId);
+
+            var newJwt = JwtHelper.GenerateToken(user, _configuration);
+            var newRefreshToken = JwtHelper.GenerateRefreshToken();
+
+            token.IsRevoked = true;
+
+            _db.RefreshTokens.Add(new RefreshToken
+            {
+                Token = newRefreshToken,
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+
+            _db.SaveChanges();
+
+            return Ok(new LoginResponseDTO
+            {
+                AccessToken = newJwt,
+                RefreshToken = newRefreshToken
+            });
+        }
+
     }
 }

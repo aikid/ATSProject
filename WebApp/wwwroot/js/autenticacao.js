@@ -117,12 +117,11 @@ function logar(event, id_campo_credencial, id_campo_senha) {
         dataType: "json",
         contentType: "application/x-www-form-urlencoded; charset=utf-8"
     }).done(function (response) {
-        if (response.req === true) {
-            if (!response.cond) {
-                window.location.href = "../Home/Dashboard";
-            } else {
-                window.location.href = "../Home/DashboardEspecialista";
-            }
+        console.log(response);
+        if (response.success) {
+            sessionStorage.setItem("accessToken", response.accessToken);
+            sessionStorage.setItem("refreshToken", response.refreshToken);
+            window.location.href = "../Home/Dashboard";
         } else {
             notificar(false, "Autenticação", response.msg, "error", "");
         }
