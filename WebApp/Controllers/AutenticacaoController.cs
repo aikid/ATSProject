@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Domain.DTOs;
+﻿using Domain.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using WebApp.WebAppUtilities;
 
 namespace WebApp.Controllers
 {
@@ -43,13 +44,14 @@ namespace WebApp.Controllers
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponseDTO>();
 
-            _httpContextAccessor.HttpContext.Session.SetString("JWT", result.AccessToken);
-            _httpContextAccessor.HttpContext.Session.SetString("REFRESH_TOKEN", result.RefreshToken);
+            var isDev = _httpContextAccessor.HttpContext.Request.IsHttps == false;
+
+            Response.Cookies.Append("ACCESS_TOKEN", result.AccessToken, CookieUtil.AccessToken(isDev));
+
+            Response.Cookies.Append("REFRESH_TOKEN", result.RefreshToken, CookieUtil.RefreshToken(isDev));
 
             return Json(new {
                 success = true,
-                accessToken = result.AccessToken,
-                refreshToken = result.RefreshToken
             });
         }
 
@@ -61,10 +63,24 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            _httpContextAccessor.HttpContext.Session.Clear();
-            Response.Cookies.Delete(".AspNetCore.Session");
+            var refreshToken = Request.Cookies["REFRESH_TOKEN"];
+
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                var client = new HttpClient
+                {
+                    BaseAddress = new Uri(_apiATSPath)
+                };
+
+                await client.PostAsJsonAsync("/api/autenticacao/logout", refreshToken);
+            }
+
+            Response.Cookies.Delete("ACCESS_TOKEN", CookieUtil.Logout());
+
+            Response.Cookies.Delete("REFRESH_TOKEN", CookieUtil.Logout());
+
             return RedirectToAction("Login", "Autenticacao");
         }
     }

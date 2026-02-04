@@ -48,20 +48,25 @@ namespace Api.Controllers
         }
 
         [HttpPost("refresh")]
-        public IActionResult Refresh([FromBody] string refreshToken)
+        public IActionResult Refresh([FromBody] RefreshRequestDTO dto)
         {
-            var token = _db.RefreshTokens
-                .FirstOrDefault(rt => rt.Token == refreshToken && !rt.IsRevoked);
+            var refresh = _db.RefreshTokens
+                .FirstOrDefault(r =>
+                    r.Token == dto.RefreshToken &&
+                    !r.IsRevoked &&
+                    r.ExpiresAt > DateTime.UtcNow);
 
-            if (token == null || token.ExpiresAt < DateTime.UtcNow)
+            if (refresh == null)
                 return Unauthorized("Refresh token inválido");
 
-            var user = _db.Users.Find(token.UserId);
+            var user = _db.Users.Find(refresh.UserId);
+            if (user == null)
+                return Unauthorized();
 
-            var newJwt = JwtHelper.GenerateToken(user, _configuration);
+            refresh.IsRevoked = true;
+
+            var newAccessToken = JwtHelper.GenerateToken(user, _configuration);
             var newRefreshToken = JwtHelper.GenerateRefreshToken();
-
-            token.IsRevoked = true;
 
             _db.RefreshTokens.Add(new RefreshToken
             {
@@ -74,10 +79,27 @@ namespace Api.Controllers
 
             return Ok(new LoginResponseDTO
             {
-                AccessToken = newJwt,
+                AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken
             });
         }
+
+
+        [HttpPost("logout")]
+        public IActionResult Logout([FromBody] string refreshToken)
+        {
+            var token = _db.RefreshTokens
+                .FirstOrDefault(rt => rt.Token == refreshToken && !rt.IsRevoked);
+
+            if (token == null)
+                return Ok();
+
+            token.IsRevoked = true;
+            _db.SaveChanges();
+
+            return Ok();
+        }
+
 
     }
 }

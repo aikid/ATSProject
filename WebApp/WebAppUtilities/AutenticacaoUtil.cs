@@ -1,59 +1,82 @@
-﻿namespace WebApp.WebAppUtilities
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+namespace WebApp.WebAppUtilities
 {
     public static class AutenticacaoUtil
     {
-        public static bool Autenticado(IHttpContextAccessor _httpContextAccessor)
+        private static ClaimsPrincipal ObterPrincipal(IHttpContextAccessor accessor)
         {
-            var autenticado = _httpContextAccessor.HttpContext.Session.GetString("autorizado");
-            return !string.IsNullOrEmpty(autenticado) && Convert.ToBoolean(autenticado);
+            var token = accessor.HttpContext?.Request.Cookies["ACCESS_TOKEN"];
+            if (string.IsNullOrWhiteSpace(token))
+                return null;
+
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(token);
+
+                var identity = new ClaimsIdentity(jwt.Claims, "jwt");
+                return new ClaimsPrincipal(identity);
+            }
+            catch
+            {
+                return null;
+            }
         }
 
-        public static bool Autorizado(IHttpContextAccessor _httpContextAccessor, string auth)
+        // 🔐 Usuário está autenticado?
+        public static bool Autenticado(IHttpContextAccessor accessor)
         {
-            var perfil = _httpContextAccessor.HttpContext.Session.GetString("nm_perfil");
-            return !string.IsNullOrEmpty(perfil) && auth.Contains(perfil);
+            var principal = ObterPrincipal(accessor);
+            return principal?.Identity?.IsAuthenticated == true;
         }
 
-        public static bool AutorizadoRules(IHttpContextAccessor _httpContextAccessor, string auth)
+        // 👤 Id do usuário
+        public static string ObterId(IHttpContextAccessor accessor)
         {
-            var rules = _httpContextAccessor.HttpContext.Session.GetString("rules");
-            return !string.IsNullOrEmpty(rules) && rules.Contains(auth);
+            return ObterPrincipal(accessor)?
+                .FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? "sessão expirou";
         }
 
-        public static string ObterHashUser(IHttpContextAccessor _httpContextAccessor)
+        // 📧 Email
+        public static string ObterEmail(IHttpContextAccessor accessor)
         {
-            var hashUser = _httpContextAccessor.HttpContext.Session.GetString("hash_user");
-            if (!string.IsNullOrEmpty(hashUser))
-                return hashUser;
-
-            return "sessão expirou";
+            return ObterPrincipal(accessor)?
+                .FindFirst(ClaimTypes.Email)?.Value
+                ?? "sessão expirou";
         }
 
-        public static string ObterId(IHttpContextAccessor _httpContextAccessor)
+        // 🧑 Nome (se existir no token)
+        public static string ObterNome(IHttpContextAccessor accessor)
         {
-            var id = _httpContextAccessor.HttpContext.Session.GetString("id_usuario_externo");
-            if (!string.IsNullOrEmpty(id))
-                return id;
-
-            return "sessão expirou";
+            return ObterPrincipal(accessor)?
+                .FindFirst(ClaimTypes.Name)?.Value
+                ?? "sessão expirou";
         }
 
-        public static string ObterEmail(IHttpContextAccessor _httpContextAccessor)
+        // 🛡️ Perfil / Role
+        public static bool Autorizado(IHttpContextAccessor accessor, string roles)
         {
-            var email = _httpContextAccessor.HttpContext.Session.GetString("email");
-            if (!string.IsNullOrEmpty(email))
-                return email;
+            var principal = ObterPrincipal(accessor);
+            if (principal == null) return false;
 
-            return "sessão expirou";
+            return roles
+                .Split(',')
+                .Any(role => principal.IsInRole(role.Trim()));
         }
 
-        public static string ObterNome(IHttpContextAccessor _httpContextAccessor)
+        // 🔑 Rules / Permissions customizadas
+        public static bool AutorizadoRules(IHttpContextAccessor accessor, string rule)
         {
-            var nome = _httpContextAccessor.HttpContext.Session.GetString("nm_usuario");
-            if (!string.IsNullOrEmpty(nome))
-                return nome;
+            var principal = ObterPrincipal(accessor);
+            if (principal == null) return false;
 
-            else return "sessão expirou";
+            return principal.Claims.Any(c =>
+                c.Type == "permission" && c.Value == rule);
         }
     }
 }

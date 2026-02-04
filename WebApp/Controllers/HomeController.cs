@@ -24,10 +24,11 @@ namespace WebApp.Controllers
             else return RedirectToAction("Dashboard");
         }
 
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public IActionResult Dashboard()
         {
-            //if (!AutenticacaoUtil.Autenticado(_httpContextAccessor))
-            //    return RedirectToAction("Login", "Autenticacao");
+            if (!AutenticacaoUtil.Autenticado(_httpContextAccessor))
+                return RedirectToAction("Login", "Autenticacao");
 
             return View("Dashboard");
         }

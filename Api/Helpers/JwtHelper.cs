@@ -27,7 +27,7 @@ namespace Api.Helpers
                 issuer: "ATS.Api",
                 audience: "ATS.WebApp",
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15),
+                expires: DateTime.UtcNow.AddSeconds(30),
                 signingCredentials: creds
             );
 
