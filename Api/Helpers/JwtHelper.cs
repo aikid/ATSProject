@@ -1,45 +1,77 @@
-﻿using Domain.Model;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using Domain.Model;
 
 namespace Api.Helpers
 {
     public static class JwtHelper
     {
-        public static string GenerateToken(User user, IConfiguration configuration)
-        {
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email)
-            };
+        private const string KeyId = "ats-rsa-key-1";
+        //public static string GenerateToken(User user, IConfiguration config)
+        //{
+        //    var privateKey = File.ReadAllText(config["Jwt:PrivateKeyPath"]);
+        //    var rsa = RSA.Create();
+        //    rsa.ImportFromPem(privateKey.ToCharArray());
 
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(configuration["Jwt:Key"])
+        //    var rsaKey = new RsaSecurityKey(rsa)
+        //    {
+        //        KeyId = "ats-rsa-key-1"
+        //    };
+
+        //    var credentials = new SigningCredentials(
+        //        rsaKey,
+        //        SecurityAlgorithms.RsaSha256
+        //    );
+
+        //    var claims = new[]
+        //    {
+        //        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        //        new Claim(ClaimTypes.Email, user.Email)
+        //    };
+
+        //    var token = new JwtSecurityToken(
+        //        issuer: config["Jwt:Issuer"],
+        //        audience: config["Jwt:Audience"],
+        //        claims: claims,
+        //        expires: DateTime.UtcNow.AddMinutes(
+        //            int.Parse(config["Jwt:AccessTokenMinutes"])
+        //        ),
+        //        signingCredentials: credentials
+        //    );
+
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
+
+        public static string GenerateToken(
+            User user,
+            IConfiguration config,
+            RsaSecurityKey signingKey
+        )
+        {
+            var credentials = new SigningCredentials(
+                signingKey,
+                SecurityAlgorithms.RsaSha256
             );
 
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var claims = new[]
+            {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim(ClaimTypes.Email, user.Email)
+    };
 
             var token = new JwtSecurityToken(
-                issuer: "ATS.Api",
-                audience: "ATS.WebApp",
+                issuer: config["Jwt:Issuer"],
+                audience: config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddSeconds(30),
-                signingCredentials: creds
+                expires: DateTime.UtcNow.AddMinutes(
+                    int.Parse(config["Jwt:AccessTokenMinutes"])
+                ),
+                signingCredentials: credentials
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        public static string GenerateRefreshToken()
-        {
-            var randomBytes = new byte[64];
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
-            return Convert.ToBase64String(randomBytes);
         }
     }
 }

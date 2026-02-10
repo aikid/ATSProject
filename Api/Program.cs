@@ -1,23 +1,71 @@
 using Api.Data;
-using Domain.Model;
+using Api.Middleware;
+using Api.Security;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Security.Cryptography;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
 builder.Services.AddControllers();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AtsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+var env = builder.Environment;
+
+var privateKeyPath = Path.Combine(
+    env.ContentRootPath,
+    builder.Configuration["Jwt:PrivateKeyPath"]
+);
+
+var privateKey = File.ReadAllText(privateKeyPath);
+
+var rsa = RSA.Create();
+rsa.ImportFromPem(privateKey.ToCharArray());
+
+var signingKey = new RsaSecurityKey(rsa)
+{
+    KeyId = "ats-rsa-key-1"
+};
+
+builder.Services.AddSingleton(signingKey);
+
+builder.Services.AddSwaggerGen(c =>
+{
+    
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header usando Bearer. Ex: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description = "API Key necessária para endpoints internos",
+        Name = builder.Configuration["ApiKey:HeaderName"],
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement());
+    c.OperationFilter<ApiKeyOperationFilter>();
+
+});
+
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -27,18 +75,19 @@ builder.Services.AddAuthentication("Bearer")
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-            )
+            IssuerSigningKey = signingKey,
+            ClockSkew = TimeSpan.Zero
         };
     });
+
+builder.Services.AddScoped<ApiKeyFilter>();
 
 builder.Services.AddAuthorization();
 
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -46,6 +95,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ApiKeyMiddleware>();
 
 app.UseAuthentication();
 

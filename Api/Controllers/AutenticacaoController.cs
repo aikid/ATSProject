@@ -3,6 +3,8 @@ using Api.Helpers;
 using Domain.DTOs;
 using Domain.Model;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Api.Controllers
 {
@@ -12,11 +14,13 @@ namespace Api.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly AtsDbContext _db;
+        private readonly RsaSecurityKey _signingKey;
 
-        public AutenticacaoController(IConfiguration configuration, AtsDbContext db)
+        public AutenticacaoController(IConfiguration configuration, AtsDbContext db, RsaSecurityKey signingKey)
         {
             _configuration = configuration;
             _db = db;
+            _signingKey = signingKey;
         }
 
         [HttpPost("login")]
@@ -27,23 +31,22 @@ namespace Api.Controllers
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.SENHA, user.PasswordHash))
                 return Unauthorized("Usuário ou senha inválidos");
 
-            var jwt = JwtHelper.GenerateToken(user, _configuration);
-            var refreshToken = JwtHelper.GenerateRefreshToken();
+            var jwt = JwtHelper.GenerateToken(user, _configuration, _signingKey);
 
-            _db.RefreshTokens.Add(new RefreshToken
+            var refreshToken = new RefreshToken
             {
-                Token = refreshToken,
-                UserId = user.Id,
+                Token = Guid.NewGuid().ToString("N"),
                 ExpiresAt = DateTime.UtcNow.AddDays(7),
-                IsRevoked = false
-            });
+                UserId = user.Id
+            };
 
+            _db.RefreshTokens.Add(refreshToken);
             _db.SaveChanges();
 
             return Ok(new LoginResponseDTO
             {
                 AccessToken = jwt,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken.Token
             });
         }
 
@@ -51,36 +54,36 @@ namespace Api.Controllers
         public IActionResult Refresh([FromBody] RefreshRequestDTO dto)
         {
             var refresh = _db.RefreshTokens
+                .Include(r => r.User)
                 .FirstOrDefault(r =>
                     r.Token == dto.RefreshToken &&
                     !r.IsRevoked &&
                     r.ExpiresAt > DateTime.UtcNow);
 
             if (refresh == null)
-                return Unauthorized("Refresh token inválido");
-
-            var user = _db.Users.Find(refresh.UserId);
-            if (user == null)
                 return Unauthorized();
 
+            // revoga o antigo
             refresh.IsRevoked = true;
 
-            var newAccessToken = JwtHelper.GenerateToken(user, _configuration);
-            var newRefreshToken = JwtHelper.GenerateRefreshToken();
-
-            _db.RefreshTokens.Add(new RefreshToken
+            // gera novo refresh
+            var newRefresh = new RefreshToken
             {
-                Token = newRefreshToken,
-                UserId = user.Id,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
-            });
+                Token = Guid.NewGuid().ToString("N"),
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                UserId = refresh.UserId
+            };
+
+            _db.RefreshTokens.Add(newRefresh);
+
+            var accessToken = JwtHelper.GenerateToken(refresh.User, _configuration, _signingKey);
 
             _db.SaveChanges();
 
-            return Ok(new LoginResponseDTO
+            return Ok(new RefreshResponseDTO
             {
-                AccessToken = newAccessToken,
-                RefreshToken = newRefreshToken
+                AccessToken = accessToken,
+                RefreshToken = newRefresh.Token
             });
         }
 

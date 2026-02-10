@@ -153,7 +153,7 @@ namespace WebApp.WebAppUtilities
 
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _http.PostAsync($"{_apiPath}/api/autenticacao/refresh", content);
+            var response = await _http.PostAsync($"{_apiPath}api/autenticacao/refresh", content);
 
             if (!response.IsSuccessStatusCode)
                 return false;

@@ -1,5 +1,6 @@
 ﻿using Domain.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Json;
 using WebApp.WebAppUtilities;
 
 namespace WebApp.Controllers
@@ -83,5 +84,6 @@ namespace WebApp.Controllers
 
             return RedirectToAction("Login", "Autenticacao");
         }
+
     }
 }

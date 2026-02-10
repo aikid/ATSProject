@@ -14,5 +14,7 @@ namespace Domain.Model
         public string PasswordHash { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        public string Role { get; set; }
     }
 }
