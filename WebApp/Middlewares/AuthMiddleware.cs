@@ -1,6 +1,7 @@
 ﻿using Domain.DTOs;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using WebApp.WebAppUtilities;
@@ -52,16 +53,80 @@ namespace WebApp.Middlewares
                 return;
             }
 
-            // ✅ JWT JÁ FOI VALIDADO PELO JwtBearer
-            if (context.User?.Identity?.IsAuthenticated == true)
+
+            var accessToken = context.Request.Cookies["ACCESS_TOKEN"];
+
+            if (!string.IsNullOrEmpty(accessToken))
             {
-                await _next(context);
-                return;
+                try
+                {
+                    var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+
+                    var publicKeyPath = Path.Combine(
+                        env.ContentRootPath,
+                        _configuration["Jwt:PublicKeyPath"]
+                    );
+
+                    var publicKey = File.ReadAllText(publicKeyPath);
+
+                    using var rsa = RSA.Create();
+                    rsa.ImportFromPem(publicKey.ToCharArray());
+
+                    var validationKey = new RsaSecurityKey(rsa)
+                    {
+                        KeyId = "ats-rsa-key-1"
+                    };
+
+                    var tokenHandler = new JwtSecurityTokenHandler();
+
+                    var principal = tokenHandler.ValidateToken(
+                        accessToken,
+                        new TokenValidationParameters
+                        {
+                            ValidateIssuer = true,
+                            ValidateAudience = true,
+                            ValidateLifetime = true,
+                            ValidateIssuerSigningKey = true,
+                            ValidIssuer = _configuration["Jwt:Issuer"],
+                            ValidAudience = _configuration["Jwt:Audience"],
+                            IssuerSigningKey = validationKey,
+                            ClockSkew = TimeSpan.Zero
+                        },
+                        out var validatedToken
+                    );
+
+                    var jwt = (JwtSecurityToken)validatedToken;
+
+                    context.Items["UserId"] = jwt.Claims
+                        .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                    context.Items["Email"] = jwt.Claims
+                        .FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+                    context.Items["Role"] = jwt.Claims
+                        .FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+
+                    context.User = principal;
+
+                    await _next(context);
+                    return;
+                }
+                catch (SecurityTokenExpiredException)
+                {
+                    _logger.LogWarning("JWT expirado, tentando refresh...");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("JWT inválido: {Message}", ex.Message);
+                }
             }
+
+
+
 
             _logger.LogWarning("REFRESH COOKIE: {Value}", context.Request.Cookies["REFRESH_TOKEN"]);
 
-            // 🔄 tenta refresh
+            
             _logger.LogWarning("Usuário não autenticado, tentando refresh...");
 
             if (await TentarRefreshAsync(context))

@@ -16,11 +16,14 @@ namespace WebApp.Controllers
         public async Task<IActionResult> ChamadaProtegida()
         {
             var resultado = await _apiClient.GetAsync<string>("api/teste/protegido");
+            var role = HttpContext.Items["Role"]?.ToString();
+            var email = HttpContext.Items["Email"]?.ToString();
 
             if (!resultado.Sucesso)
                 return Content("❌ Falhou: " + resultado.Erro?.Mensagem);
 
-            return Content("✅ Sucesso após refresh automático!");
+            var content = $"✅ Sucesso! Role: {role}, Email: {email}, após refresh automático!";
+            return Content(content);
         }
     }
 }

@@ -8,58 +8,20 @@ namespace Api.Helpers
 {
     public static class JwtHelper
     {
-        private const string KeyId = "ats-rsa-key-1";
-        //public static string GenerateToken(User user, IConfiguration config)
-        //{
-        //    var privateKey = File.ReadAllText(config["Jwt:PrivateKeyPath"]);
-        //    var rsa = RSA.Create();
-        //    rsa.ImportFromPem(privateKey.ToCharArray());
-
-        //    var rsaKey = new RsaSecurityKey(rsa)
-        //    {
-        //        KeyId = "ats-rsa-key-1"
-        //    };
-
-        //    var credentials = new SigningCredentials(
-        //        rsaKey,
-        //        SecurityAlgorithms.RsaSha256
-        //    );
-
-        //    var claims = new[]
-        //    {
-        //        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        //        new Claim(ClaimTypes.Email, user.Email)
-        //    };
-
-        //    var token = new JwtSecurityToken(
-        //        issuer: config["Jwt:Issuer"],
-        //        audience: config["Jwt:Audience"],
-        //        claims: claims,
-        //        expires: DateTime.UtcNow.AddMinutes(
-        //            int.Parse(config["Jwt:AccessTokenMinutes"])
-        //        ),
-        //        signingCredentials: credentials
-        //    );
-
-        //    return new JwtSecurityTokenHandler().WriteToken(token);
-        //}
-
         public static string GenerateToken(
             User user,
             IConfiguration config,
             RsaSecurityKey signingKey
         )
         {
-            var credentials = new SigningCredentials(
-                signingKey,
-                SecurityAlgorithms.RsaSha256
-            );
-
             var claims = new[]
             {
-        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new Claim(ClaimTypes.Email, user.Email)
-    };
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim("user_id", user.Id.ToString()),
+                new Claim("is_active", user.IsActive.ToString())
+            };
 
             var token = new JwtSecurityToken(
                 issuer: config["Jwt:Issuer"],
@@ -68,7 +30,10 @@ namespace Api.Helpers
                 expires: DateTime.UtcNow.AddMinutes(
                     int.Parse(config["Jwt:AccessTokenMinutes"])
                 ),
-                signingCredentials: credentials
+                signingCredentials: new SigningCredentials(
+                    signingKey,
+                    SecurityAlgorithms.RsaSha256
+                )
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);

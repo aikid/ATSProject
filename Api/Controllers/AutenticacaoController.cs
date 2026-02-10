@@ -1,7 +1,9 @@
 ﻿using Api.Data;
 using Api.Helpers;
+using Api.Security;
 using Domain.DTOs;
 using Domain.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -23,9 +25,11 @@ namespace Api.Controllers
             _signingKey = signingKey;
         }
 
+        [IgnoreApiKey]
         [HttpPost("login")]
         public IActionResult Login(LoginRequestDTO dto)
         {
+            Console.WriteLine(">>> CHEGOU NO LOGIN DA API");
             var user = _db.Users.FirstOrDefault(u => u.Email == dto.USUARIO);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.SENHA, user.PasswordHash))
@@ -50,6 +54,7 @@ namespace Api.Controllers
             });
         }
 
+        [IgnoreApiKey]
         [HttpPost("refresh")]
         public IActionResult Refresh([FromBody] RefreshRequestDTO dto)
         {
@@ -87,7 +92,7 @@ namespace Api.Controllers
             });
         }
 
-
+        [IgnoreApiKey]
         [HttpPost("logout")]
         public IActionResult Logout([FromBody] string refreshToken)
         {

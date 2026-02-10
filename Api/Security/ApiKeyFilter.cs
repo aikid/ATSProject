@@ -16,6 +16,19 @@ namespace Api.Security
             ActionExecutingContext context,
             ActionExecutionDelegate next)
         {
+
+            var endpoint = context.HttpContext.GetEndpoint();
+
+            var requiresApiKey =
+                endpoint?.Metadata.GetMetadata<ApiKeyAttribute>() != null;
+
+            if (!requiresApiKey)
+            {
+                await next();
+                return;
+            }
+
+
             var headerName = _config["ApiKey:HeaderName"];
             var expectedKey = _config["ApiKey:Value"];
 

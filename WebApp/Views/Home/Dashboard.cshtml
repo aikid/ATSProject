@@ -1,2 +1,11 @@
 ﻿<h1 class="h2 mb-4 fw-normal text-center">Dashboard</h1>
+@if (User.Identity.IsAuthenticated)
+{
+    <p>E-mail: @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <span>ADMIN</span>
+    }
+}
 <button class="btnPadrao btnEntrar" onclick="logout()">Sair</button>
