@@ -16,5 +16,10 @@ namespace Domain.Model
         public bool IsActive { get; set; } = true;
 
         public string Role { get; set; }
+
+        public ICollection<Job> JobsCreated { get; set; }
+        public ICollection<Application> Applications { get; set; }
+        public CandidateProfile? CandidateProfile { get; set; }
+
     }
 }

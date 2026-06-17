@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Api.Security;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers
@@ -7,9 +8,16 @@ namespace Api.Controllers
     [Route("api/teste")]
     public class TesteController : ControllerBase
     {
-        [Authorize]
+        [ApiKey]
         [HttpGet("protegido")]
         public IActionResult Protegido()
+        {
+            return Ok("Acesso autorizado");
+        }
+
+        [Authorize]
+        [HttpGet("naoprotegido")]
+        public IActionResult NaoProtegido()
         {
             return Ok("Acesso autorizado");
         }
