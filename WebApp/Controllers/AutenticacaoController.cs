@@ -64,6 +64,39 @@ namespace WebApp.Controllers
         }
 
         [HttpGet]
+        public IActionResult Cadastro()
+        {
+            return View("Cadastro");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Cadastro(string FullName, string Email, string Phone, string Senha, string SenhaConfirmacao)
+        {
+            var client = new HttpClient();
+            client.BaseAddress = new Uri(_apiATSPath);
+
+            var response = await client.PostAsJsonAsync("/api/autenticacao/register", new CadastroRequestDTO
+            {
+                FullName = FullName,
+                Email = Email,
+                Phone = Phone,
+                Senha = Senha,
+                SenhaConfirmacao = SenhaConfirmacao
+            });
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                return Json(new { success = false, msg = "Este e-mail já está cadastrado." });
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                return Json(new { success = false, msg = "As senhas não conferem." });
+
+            if (!response.IsSuccessStatusCode)
+                return Json(new { success = false, msg = "Não foi possível concluir o cadastro. Tente novamente." });
+
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Logout()
         {
             var refreshToken = Request.Cookies["REFRESH_TOKEN"];

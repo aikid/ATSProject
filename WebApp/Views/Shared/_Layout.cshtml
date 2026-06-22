@@ -1,59 +1,113 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebApp</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - ATS</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/WebApp.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="~/lib/sweetAlert2/sweetAlert2.css" />
-    <link href="~/css/autenticacao.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/autenticacao.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">WebApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+
+@{
+    var userRole    = Context.Items["Role"]  as string ?? string.Empty;
+    var userEmail   = Context.Items["Email"] as string ?? string.Empty;
+    var isAdmin     = userRole == "Admin";
+    var isRecruiter = userRole == "Recruiter";
+    var isCandidate = userRole == "Candidate";
+}
+
+@if (ViewData["Layout"] as string == "Auth")
+{
+    <main>@RenderBody()</main>
+}
+else
+{
+    <!-- Sidebar -->
+    <div class="ats-sidebar" id="sidebar">
+        <div class="ats-sidebar-brand">
+            <i class="bi bi-briefcase-fill me-2"></i>
+            <span class="brand-text">ATS</span>
+        </div>
+
+        <nav class="ats-nav">
+            <a href="@Url.Action("Dashboard", "Home")" class="ats-nav-link @(ViewData["ActivePage"] as string == "Dashboard" ? "active" : "")">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+            @if (isAdmin || isRecruiter)
+            {
+                <a href="@Url.Action("Index", "Vagas")" class="ats-nav-link @(ViewData["ActivePage"] as string == "Vagas" ? "active" : "")">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Vagas</span>
+                </a>
+                <a href="#" class="ats-nav-link @(ViewData["ActivePage"] as string == "Candidatos" ? "active" : "")">
+                    <i class="bi bi-people"></i>
+                    <span>Candidatos</span>
+                </a>
+            }
+            @if (isCandidate)
+            {
+                <a href="#" class="ats-nav-link @(ViewData["ActivePage"] as string == "Perfil" ? "active" : "")">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Meu Perfil</span>
+                </a>
+                <a href="#" class="ats-nav-link @(ViewData["ActivePage"] as string == "MinhasCandidaturas" ? "active" : "")">
+                    <i class="bi bi-send-check"></i>
+                    <span>Minhas Candidaturas</span>
+                </a>
+            }
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+        <div class="ats-sidebar-footer">
+            <a href="@Url.Action("Logout", "Autenticacao")" class="ats-nav-link text-danger-soft">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>Sair</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Topbar + conteúdo -->
+    <div class="ats-main-wrapper" id="mainWrapper">
+        <header class="ats-topbar">
+            <button class="ats-sidebar-toggle" id="sidebarToggle" title="Recolher menu">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <div class="ats-topbar-right">
+                <span class="ats-user-badge">
+                    <i class="bi bi-person-circle me-1"></i>
+                    @userEmail
+                </span>
+                @if (isAdmin)
+                {
+                    <span class="badge bg-danger ms-2">Admin</span>
+                }
+                else if (isRecruiter)
+                {
+                    <span class="badge bg-primary ms-2">Recruiter</span>
+                }
+                else if (isCandidate)
+                {
+                    <span class="badge bg-success ms-2">Candidato</span>
+                }
+            </div>
+        </header>
+
+        <main class="ats-content">
             @RenderBody()
         </main>
     </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - WebApp - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
+}
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.12/dist/sweetalert2.all.min.js"></script>
-    <script src="~/lib/sweetAlert2/sweetAlert2.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/validacoes.js"></script>
     <script src="~/js/autenticacao.js"></script>
-
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

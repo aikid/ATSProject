@@ -93,6 +93,32 @@ namespace Api.Controllers
         }
 
         [IgnoreApiKey]
+        [HttpPost("register")]
+        public IActionResult Register([FromBody] CadastroRequestDTO dto)
+        {
+            if (_db.Users.Any(u => u.Email == dto.Email))
+                return Conflict(new { mensagem = "Este e-mail já está cadastrado." });
+
+            if (dto.Senha != dto.SenhaConfirmacao)
+                return BadRequest(new { mensagem = "As senhas não conferem." });
+
+            var user = new User
+            {
+                Email = dto.Email,
+                FullName = dto.FullName,
+                Phone = dto.Phone,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
+                IsActive = true,
+                Role = "Candidate"
+            };
+
+            _db.Users.Add(user);
+            _db.SaveChanges();
+
+            return Created(string.Empty, new { mensagem = "Cadastro realizado com sucesso." });
+        }
+
+        [IgnoreApiKey]
         [HttpPost("logout")]
         public IActionResult Logout([FromBody] string refreshToken)
         {

@@ -13,6 +13,12 @@ namespace Domain.Model
         [Required]
         public string PasswordHash { get; set; }
 
+        [MaxLength(150)]
+        public string? FullName { get; set; }
+
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         public string Role { get; set; }

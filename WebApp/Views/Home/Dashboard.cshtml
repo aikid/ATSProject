@@ -1,11 +1,144 @@
-﻿<h1 class="h2 mb-4 fw-normal text-center">Dashboard</h1>
-@if (User.Identity.IsAuthenticated)
-{
-    <p>E-mail: @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</p>
-
-    @if (User.IsInRole("Admin"))
-    {
-        <span>ADMIN</span>
-    }
+﻿@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+    var userRole    = Context.Items["Role"]  as string ?? string.Empty;
+    var userEmail   = Context.Items["Email"] as string ?? string.Empty;
+    var isAdmin     = userRole == "Admin";
+    var isRecruiter = userRole == "Recruiter";
+    var isCandidate = userRole == "Candidate";
 }
-<button class="btnPadrao btnEntrar" onclick="logout()">Sair</button>
+
+<div class="ats-page-header mb-4">
+    <h2 class="fw-bold mb-0">
+        <i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard
+    </h2>
+    <p class="text-muted mb-0">Bem-vindo de volta,
+        <strong>@userEmail</strong>
+    </p>
+</div>
+
+@if (isAdmin || isRecruiter)
+{
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="ats-stat-card ats-stat-blue">
+                <div class="ats-stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Vagas Ativas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ats-stat-card ats-stat-green">
+                <div class="ats-stat-icon"><i class="bi bi-people"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Candidatos</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ats-stat-card ats-stat-orange">
+                <div class="ats-stat-icon"><i class="bi bi-send"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Candidaturas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="ats-stat-card ats-stat-purple">
+                <div class="ats-stat-icon"><i class="bi bi-check2-circle"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Aprovados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="ats-card">
+                <div class="ats-card-header">
+                    <i class="bi bi-clock-history me-2"></i>Atividade Recente
+                </div>
+                <div class="ats-card-body text-muted fst-italic">
+                    Nenhuma atividade registrada.
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="ats-card">
+                <div class="ats-card-header">
+                    <i class="bi bi-bar-chart me-2"></i>Vagas por Status
+                </div>
+                <div class="ats-card-body text-muted fst-italic">
+                    Nenhuma vaga cadastrada.
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (isCandidate)
+{
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-4">
+            <div class="ats-stat-card ats-stat-blue">
+                <div class="ats-stat-icon"><i class="bi bi-send-check"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Candidaturas Enviadas</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <div class="ats-stat-card ats-stat-green">
+                <div class="ats-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Em Análise</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-4">
+            <div class="ats-stat-card ats-stat-purple">
+                <div class="ats-stat-icon"><i class="bi bi-briefcase"></i></div>
+                <div>
+                    <div class="ats-stat-value">—</div>
+                    <div class="ats-stat-label">Vagas Disponíveis</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="ats-card">
+                <div class="ats-card-header">
+                    <i class="bi bi-list-check me-2"></i>Minhas Candidaturas
+                </div>
+                <div class="ats-card-body text-muted fst-italic">
+                    Você ainda não se candidatou a nenhuma vaga.
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="ats-card">
+                <div class="ats-card-header">
+                    <i class="bi bi-search me-2"></i>Vagas Recomendadas
+                </div>
+                <div class="ats-card-body text-muted fst-italic">
+                    Nenhuma vaga disponível no momento.
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>Perfil sem permissões atribuídas.
+    </div>
+}

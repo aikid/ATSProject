@@ -1,0 +1,193 @@
+@{
+    ViewData["Title"] = "Criar conta";
+    ViewData["Layout"] = "Auth";
+}
+
+<div class="ats-login-wrapper">
+    <div class="ats-login-card" style="max-width:480px">
+
+        <div class="ats-login-brand">
+            <i class="bi bi-person-plus-fill"></i>
+            <h1>Criar conta</h1>
+            <p class="text-muted">Preencha os dados abaixo para se cadastrar</p>
+        </div>
+
+        <form id="frmCadastro" novalidate>
+
+            <div class="mb-3">
+                <label for="txtFullName" class="form-label fw-semibold">Nome completo</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    <input type="text" class="form-control" id="txtFullName" placeholder="Seu nome completo" required />
+                </div>
+                <div id="feedbackInvalido_txtFullName" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="txtEmail" class="form-label fw-semibold">E-mail</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="txtEmail" placeholder="seu@email.com" required
+                           onfocusout="validarEmailCadastro();" />
+                </div>
+                <div id="feedbackInvalido_txtEmail" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="txtPhone" class="form-label fw-semibold">Telefone</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-phone"></i></span>
+                    <input type="tel" class="form-control" id="txtPhone" placeholder="(11) 99999-9999" maxlength="15"
+                           oninput="mascaraTelefone(this);" />
+                </div>
+                <div id="feedbackInvalido_txtPhone" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="txtSenha" class="form-label fw-semibold">Senha</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="txtSenha" placeholder="Mín. 8 caracteres" required />
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="toggleSenha('txtSenha', 'iconOlhoSenha');" tabindex="-1">
+                        <i class="bi bi-eye-slash" id="iconOlhoSenha"></i>
+                    </button>
+                </div>
+                <div id="feedbackInvalido_txtSenha" class="invalid-feedback"></div>
+                <div class="form-text text-muted" style="font-size:.78rem">
+                    Mínimo 8 caracteres com 1 maiúscula, 1 número e 1 caractere especial.
+                </div>
+            </div>
+
+            <div class="mb-1">
+                <label for="txtSenhaConfirmacao" class="form-label fw-semibold">Confirmar senha</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                    <input type="password" class="form-control" id="txtSenhaConfirmacao" placeholder="Repita a senha" required />
+                    <button class="btn btn-outline-secondary" type="button"
+                            onclick="toggleSenha('txtSenhaConfirmacao', 'iconOlhoConfirmacao');" tabindex="-1">
+                        <i class="bi bi-eye-slash" id="iconOlhoConfirmacao"></i>
+                    </button>
+                </div>
+                <div id="feedbackInvalido_txtSenhaConfirmacao" class="invalid-feedback"></div>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button class="btn btn-primary btn-lg" type="button" onclick="cadastrar();">
+                    <i class="bi bi-check-circle me-1"></i> Criar conta
+                </button>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="@Url.Action("Login", "Autenticacao")" class="link-secondary small">
+                    <i class="bi bi-arrow-left me-1"></i> Já tenho uma conta
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function validarEmailCadastro() {
+        var email = document.getElementById('txtEmail').value;
+        var fb = document.getElementById('feedbackInvalido_txtEmail');
+        var campo = document.getElementById('txtEmail');
+        if (email && !validarEmail(email)) {
+            exibirFeedback(fb, 'Informe um e-mail válido.', campo);
+        } else {
+            limparFeedback(fb, campo);
+        }
+    }
+
+    function mascaraTelefone(input) {
+        var v = input.value.replace(/\D/g, '').substring(0, 11);
+        if (v.length > 10) {
+            v = v.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+        } else if (v.length > 6) {
+            v = v.replace(/^(\d{2})(\d{4,5})(\d{0,4})$/, '($1) $2-$3');
+        } else if (v.length > 2) {
+            v = v.replace(/^(\d{2})(\d+)$/, '($1) $2');
+        }
+        input.value = v;
+    }
+
+    function toggleSenha(inputId, iconId) {
+        var input = document.getElementById(inputId);
+        var icon  = document.getElementById(iconId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('bi-eye-slash', 'bi-eye');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('bi-eye', 'bi-eye-slash');
+        }
+    }
+
+    function cadastrar() {
+        var fullName  = document.getElementById('txtFullName');
+        var email     = document.getElementById('txtEmail');
+        var phone     = document.getElementById('txtPhone');
+        var senha     = document.getElementById('txtSenha');
+        var confirmacao = document.getElementById('txtSenhaConfirmacao');
+
+        var fbName    = document.getElementById('feedbackInvalido_txtFullName');
+        var fbEmail   = document.getElementById('feedbackInvalido_txtEmail');
+        var fbPhone   = document.getElementById('feedbackInvalido_txtPhone');
+        var fbSenha   = document.getElementById('feedbackInvalido_txtSenha');
+        var fbConf    = document.getElementById('feedbackInvalido_txtSenhaConfirmacao');
+
+        var valido = true;
+
+        if (!fullName.value.trim()) {
+            exibirFeedback(fbName, 'Informe seu nome completo.', fullName);
+            valido = false;
+        } else { limparFeedback(fbName, fullName); }
+
+        if (!email.value.trim() || !validarEmail(email.value)) {
+            exibirFeedback(fbEmail, 'Informe um e-mail válido.', email);
+            valido = false;
+        } else { limparFeedback(fbEmail, email); }
+
+        if (!phone.value.trim()) {
+            exibirFeedback(fbPhone, 'Informe seu telefone.', phone);
+            valido = false;
+        } else { limparFeedback(fbPhone, phone); }
+
+        var senhaRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        if (!senha.value || !senhaRegex.test(senha.value)) {
+            exibirFeedback(fbSenha, 'A senha deve ter mínimo 8 caracteres, 1 maiúscula, 1 número e 1 caractere especial.', senha);
+            valido = false;
+        } else { limparFeedback(fbSenha, senha); }
+
+        if (!confirmacao.value || confirmacao.value !== senha.value) {
+            exibirFeedback(fbConf, 'As senhas não conferem.', confirmacao);
+            valido = false;
+        } else { limparFeedback(fbConf, confirmacao); }
+
+        if (!valido) return;
+
+        $.ajax({
+            method: 'POST',
+            url: '/Autenticacao/Cadastro',
+            data: {
+                FullName: fullName.value.trim(),
+                Email: email.value.trim(),
+                Phone: phone.value.trim(),
+                Senha: senha.value,
+                SenhaConfirmacao: confirmacao.value
+            },
+            dataType: 'json'
+        }).done(function (res) {
+            if (res.success) {
+                notificar(true, 'Cadastro realizado!', 'Sua conta foi criada com sucesso. Faça login para continuar.', 'success', '/Autenticacao/Login');
+            } else {
+                notificar(false, 'Atenção', res.msg, 'warning', '');
+            }
+        }).fail(function () {
+            notificar(false, 'Erro', 'Não foi possível concluir o cadastro. Tente novamente.', 'error', '');
+        });
+    }
+</script>
+}

@@ -29,7 +29,9 @@ namespace WebApp.WebAppUtilities
             _http.DefaultRequestHeaders.Clear();
             _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            var accessToken = _httpContext.HttpContext?.Request.Cookies["ACCESS_TOKEN"];
+            // Prioriza o token renovado pelo middleware na requisição atual
+            var accessToken = _httpContext.HttpContext?.Items["ACCESS_TOKEN"] as string
+                ?? _httpContext.HttpContext?.Request.Cookies["ACCESS_TOKEN"];
 
             if (!string.IsNullOrEmpty(accessToken))
             {
@@ -77,18 +79,17 @@ namespace WebApp.WebAppUtilities
             string caminhoCompleto = $"{_apiPath}{caminho}";
 
             var json = JsonConvert.SerializeObject(obj);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            using var retorno = await _http.PostAsync(caminhoCompleto, content);
+            using var retorno = await _http.PostAsync(caminhoCompleto,
+                new StringContent(json, Encoding.UTF8, "application/json"));
 
             if (retorno.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
                 if (await TentarRefreshAsync())
                 {
                     AplicarHeaders();
-                    retorno.Dispose();
-
-                    using var retry = await _http.PostAsync(caminhoCompleto, content);
+                    using var retry = await _http.PostAsync(caminhoCompleto,
+                        new StringContent(json, Encoding.UTF8, "application/json"));
                     return await ProcessarResposta<TResp>(retry);
                 }
             }
@@ -100,6 +101,66 @@ namespace WebApp.WebAppUtilities
                 var dado = JsonConvert.DeserializeObject<TResp>(conteudo);
                 return Resultado<TResp>.Ok(dado);
             }
+
+            var erro = TryParseErro(conteudo) ?? new RetornoErro { Mensagem = $"Erro {(int)retorno.StatusCode} - {retorno.ReasonPhrase}", Erro = conteudo };
+            return Resultado<TResp>.Fail(erro);
+        }
+
+        public async Task<Resultado<TResp>> PutAsync<TReq, TResp>(string caminho, TReq obj)
+        {
+            AplicarHeaders();
+
+            string caminhoCompleto = $"{_apiPath}{caminho}";
+
+            var json = JsonConvert.SerializeObject(obj);
+
+            using var retorno = await _http.PutAsync(caminhoCompleto,
+                new StringContent(json, Encoding.UTF8, "application/json"));
+
+            if (retorno.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                if (await TentarRefreshAsync())
+                {
+                    AplicarHeaders();
+                    using var retry = await _http.PutAsync(caminhoCompleto,
+                        new StringContent(json, Encoding.UTF8, "application/json"));
+                    return await ProcessarResposta<TResp>(retry);
+                }
+            }
+
+            var conteudo = await retorno.Content.ReadAsStringAsync();
+
+            if (retorno.IsSuccessStatusCode)
+                return Resultado<TResp>.Ok(default);
+
+            var erro = TryParseErro(conteudo) ?? new RetornoErro { Mensagem = $"Erro {(int)retorno.StatusCode} - {retorno.ReasonPhrase}", Erro = conteudo };
+            return Resultado<TResp>.Fail(erro);
+        }
+
+        public async Task<Resultado<TResp>> PatchAsync<TResp>(string caminho)
+        {
+            AplicarHeaders();
+
+            string caminhoCompleto = $"{_apiPath}{caminho}";
+
+            using var requ = new HttpRequestMessage(HttpMethod.Patch, caminhoCompleto);
+            using var retorno = await _http.SendAsync(requ);
+
+            if (retorno.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                if (await TentarRefreshAsync())
+                {
+                    AplicarHeaders();
+                    using var retry = new HttpRequestMessage(HttpMethod.Patch, caminhoCompleto);
+                    using var retryResp = await _http.SendAsync(retry);
+                    return await ProcessarResposta<TResp>(retryResp);
+                }
+            }
+
+            var conteudo = await retorno.Content.ReadAsStringAsync();
+
+            if (retorno.IsSuccessStatusCode)
+                return Resultado<TResp>.Ok(default);
 
             var erro = TryParseErro(conteudo) ?? new RetornoErro { Mensagem = $"Erro {(int)retorno.StatusCode} - {retorno.ReasonPhrase}", Erro = conteudo };
             return Resultado<TResp>.Fail(erro);
