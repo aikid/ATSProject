@@ -242,4 +242,47 @@ html, body {
 
 .bg-success-subtle  { background-color: #d1fae5 !important; }
 .bg-secondary-subtle { background-color: #f1f3f5 !important; }
+.bg-primary-subtle  { background-color: #e0e7ff !important; }
+.bg-warning-subtle  { background-color: #fef9c3 !important; }
+.bg-danger-subtle   { background-color: #fee2e2 !important; }
+
+/* ---- Avatar de perfil ---- */
+.perfil-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f46e5, #818cf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2.2rem;
+}
+
+/* ---- Stat card selecionado (filtro ativo) ---- */
+.ats-stat-card--selected {
+    outline: 2px solid var(--ats-primary);
+    outline-offset: 2px;
+}
+
+
+
+/* ---- Definition list ---- */
+.ats-dl dt {
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #9ca3af;
+    margin-bottom: .15rem;
+}
+
+.ats-dl dd {
+    font-size: .92rem;
+    color: #374151;
+    margin-bottom: .85rem;
+    word-break: break-word;
+}
+
+.ats-dl dd:last-child { margin-bottom: 0; }
 

@@ -44,18 +44,18 @@ else
                     <i class="bi bi-file-earmark-text"></i>
                     <span>Vagas</span>
                 </a>
-                <a href="#" class="ats-nav-link @(ViewData["ActivePage"] as string == "Candidatos" ? "active" : "")">
+                <a href="@Url.Action("Index", "Candidatos")" class="ats-nav-link @(ViewData["ActivePage"] as string == "Candidatos" ? "active" : "")">
                     <i class="bi bi-people"></i>
                     <span>Candidatos</span>
                 </a>
             }
             @if (isCandidate)
             {
-                <a href="#" class="ats-nav-link @(ViewData["ActivePage"] as string == "Perfil" ? "active" : "")">
+                <a href="@Url.Action("Index", "Perfil")" class="ats-nav-link @(ViewData["ActivePage"] as string == "Perfil" ? "active" : "")">
                     <i class="bi bi-person-badge"></i>
                     <span>Meu Perfil</span>
                 </a>
-                <a href="#" class="ats-nav-link @(ViewData["ActivePage"] as string == "MinhasCandidaturas" ? "active" : "")">
+                <a href="@Url.Action("Index", "Candidaturas")" class="ats-nav-link @(ViewData["ActivePage"] as string == "MinhasCandidaturas" ? "active" : "")">
                     <i class="bi bi-send-check"></i>
                     <span>Minhas Candidaturas</span>
                 </a>

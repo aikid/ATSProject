@@ -1,0 +1,201 @@
+@model List<Domain.DTOs.MyApplicationDTO>
+@{
+    ViewData["Title"] = "Minhas Candidaturas";
+    ViewData["ActivePage"] = "MinhasCandidaturas";
+    var statusFilter = ViewData["StatusFilter"] as string ?? "";
+
+    var total      = Model.Count;
+    var emAnalise  = Model.Count(a => a.Status == "Reviewing");
+    var aprovados  = Model.Count(a => a.Status == "Approved");
+    var reprovados = Model.Count(a => a.Status == "Rejected");
+}
+
+<div class="ats-page-header mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">
+            <i class="bi bi-send-check me-2 text-primary"></i>Minhas Candidaturas
+        </h2>
+        <p class="text-muted mb-0">Acompanhe o status das suas candidaturas</p>
+    </div>
+</div>
+
+<!-- Resumo por status -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <a href="@Url.Action("Index", "Candidaturas")" class="text-decoration-none">
+            <div class="ats-stat-card @(string.IsNullOrEmpty(statusFilter) ? "ats-stat-card--selected" : "") ats-stat-blue">
+                <div class="ats-stat-icon"><i class="bi bi-send"></i></div>
+                <div>
+                    <div class="ats-stat-value">@total</div>
+                    <div class="ats-stat-label">Total</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-xl-3">
+        <a href="@Url.Action("Index", "Candidaturas", new { status = "Reviewing" })" class="text-decoration-none">
+            <div class="ats-stat-card @(statusFilter == "Reviewing" ? "ats-stat-card--selected" : "") ats-stat-orange">
+                <div class="ats-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div>
+                    <div class="ats-stat-value">@emAnalise</div>
+                    <div class="ats-stat-label">Em análise</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-xl-3">
+        <a href="@Url.Action("Index", "Candidaturas", new { status = "Approved" })" class="text-decoration-none">
+            <div class="ats-stat-card @(statusFilter == "Approved" ? "ats-stat-card--selected" : "") ats-stat-green">
+                <div class="ats-stat-icon"><i class="bi bi-check2-circle"></i></div>
+                <div>
+                    <div class="ats-stat-value">@aprovados</div>
+                    <div class="ats-stat-label">Aprovados</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-xl-3">
+        <a href="@Url.Action("Index", "Candidaturas", new { status = "Rejected" })" class="text-decoration-none">
+            <div class="ats-stat-card @(statusFilter == "Rejected" ? "ats-stat-card--selected" : "") ats-stat-purple">
+                <div class="ats-stat-icon"><i class="bi bi-x-circle"></i></div>
+                <div>
+                    <div class="ats-stat-value">@reprovados</div>
+                    <div class="ats-stat-label">Reprovados</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Tabela -->
+<div class="ats-card">
+    <div class="ats-card-body p-0">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                Nenhuma candidatura encontrada.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover ats-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Vaga</th>
+                            <th>Empresa</th>
+                            <th>Localidade</th>
+                            <th>Status</th>
+                            <th>Candidatura em</th>
+                            <th class="text-end">Detalhes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model)
+                        {
+                            var badgeCss    = a.Status switch
+                            {
+                                "Applied"   => "bg-primary-subtle text-primary",
+                                "Reviewing" => "bg-warning-subtle text-warning",
+                                "Approved"  => "bg-success-subtle text-success",
+                                "Rejected"  => "bg-danger-subtle text-danger",
+                                _           => "bg-secondary-subtle text-secondary"
+                            };
+                            var statusLabel = a.Status switch
+                            {
+                                "Applied"   => "Aplicado",
+                                "Reviewing" => "Em análise",
+                                "Approved"  => "Aprovado",
+                                "Rejected"  => "Reprovado",
+                                _           => a.Status
+                            };
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@a.JobTitle</div>
+                                    @if (!a.JobIsActive)
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary" style="font-size:.72rem">
+                                            Vaga encerrada
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-muted">@a.Company</td>
+                                <td class="text-muted">
+                                    <i class="bi bi-geo-alt me-1"></i>@a.Location
+                                </td>
+                                <td>
+                                    <span class="badge @badgeCss">@statusLabel</span>
+                                </td>
+                                <td class="text-muted text-nowrap" style="font-size:.85rem">
+                                    @a.AppliedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            onclick="abrirDetalhes(@a.JobId, '@a.JobTitle.Replace("'", "\\'")','@a.Company.Replace("'", "\\'")','@a.Location.Replace("'", "\\'")','@badgeCss','@statusLabel')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal de detalhes da vaga -->
+<div class="modal fade" id="modalVaga" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="modalVagaTitulo">—</h5>
+                    <div class="text-muted small" id="modalVagaEmpresa">—</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="text-muted small">
+                        <i class="bi bi-geo-alt me-1"></i>
+                        <span id="modalVagaLocal">—</span>
+                    </span>
+                    <span class="badge" id="modalVagaStatus"></span>
+                </div>
+                <hr />
+                <div id="modalVagaDescricao" style="white-space:pre-line; font-size:.93rem"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Pré-carrega as descrições a partir do modelo (sem chamada extra)
+    var vagasCache = {
+        @foreach (var a in Model)
+        {
+            @: @a.JobId: @Json.Serialize(a.JobDescription ?? ""),
+        }
+    };
+
+    function abrirDetalhes(jobId, titulo, empresa, local, badgeCss, statusLabel) {
+        document.getElementById('modalVagaTitulo').textContent  = titulo;
+        document.getElementById('modalVagaEmpresa').textContent = empresa;
+        document.getElementById('modalVagaLocal').textContent   = local;
+
+        var badgeEl = document.getElementById('modalVagaStatus');
+        badgeEl.className = 'badge ' + badgeCss;
+        badgeEl.textContent = statusLabel;
+
+        document.getElementById('modalVagaDescricao').textContent = vagasCache[jobId] || '—';
+
+        new bootstrap.Modal(document.getElementById('modalVaga')).show();
+    }
+</script>
+}
